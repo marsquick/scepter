@@ -1,9 +1,8 @@
-module github.com/marsquick/scepter/scepter
+module github.com/marsquick/scepter
 
 go 1.21.6
 
 require (
-	github.com/marsquick/scepter/migration v0.0.0-20250522063921-5344fdf294c2
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/gorm v1.26.1
 )
