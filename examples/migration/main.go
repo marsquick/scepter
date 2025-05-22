@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"scepter/migration"
+	"github.com/marsquick/scepter/migration"
 )
 
 // FileResource 实现了 migration.Resource 接口
