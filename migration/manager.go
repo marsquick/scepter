@@ -253,7 +253,6 @@ type GlobalManager struct {
 	recordPath   string              // 版本记录文件路径
 	mu           sync.Mutex          // 并发锁
 	moduleOrders []ModuleOrder       // 模块执行顺序
-	lockFile     string              // 锁文件路径
 }
 
 // NewGlobalManager 创建一个新的全局版本控制管理器
@@ -262,7 +261,6 @@ func NewGlobalManager(recordPath string) *GlobalManager {
 		managers:     make(map[string]*Manager),
 		recordPath:   recordPath,
 		moduleOrders: make([]ModuleOrder, 0),
-		lockFile:     recordPath + ".lock",
 	}
 }
 
@@ -372,22 +370,6 @@ func calculateChecksum(version VersionDefinition) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// acquireLock 获取版本执行锁
-func (gm *GlobalManager) acquireLock() error {
-	// 检查是否已有其他进程在运行版本升级
-	if _, err := os.Stat(gm.lockFile); err == nil {
-		return fmt.Errorf("another migration process is running")
-	}
-
-	// 创建锁文件
-	return os.WriteFile(gm.lockFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0644)
-}
-
-// releaseLock 释放版本执行锁
-func (gm *GlobalManager) releaseLock() error {
-	return os.Remove(gm.lockFile)
-}
-
 // checkVersionDependencies 检查版本依赖
 func (gm *GlobalManager) checkVersionDependencies(module string, version VersionDefinition, records *VersionRecords) error {
 	moduleRecord := records.Modules[module]
@@ -424,12 +406,6 @@ func (gm *GlobalManager) checkVersionStatus(module string, version string, recor
 
 // RunAllVersions 执行所有模块的版本升级
 func (gm *GlobalManager) RunAllVersions() error {
-	// 获取执行锁
-	if err := gm.acquireLock(); err != nil {
-		return fmt.Errorf("failed to acquire lock: %v", err)
-	}
-	defer gm.releaseLock()
-
 	// 加载版本记录
 	records, err := gm.loadVersionRecords()
 	if err != nil {
